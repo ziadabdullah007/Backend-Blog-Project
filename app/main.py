@@ -1,6 +1,5 @@
 from fastapi import FastAPI
 from routes import user_routes, post_routes, comment_routes
-
 from app.database import Base, engine
 from models import user_model, post_model, comment_model
 
