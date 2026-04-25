@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta
 import jwt
-from jwt.exceptions import PyJWTError
+from jwt import ExpiredSignatureError, InvalidTokenError
 from fastapi import Depends, HTTPException
 from fastapi.security import OAuth2PasswordBearer
 import os
@@ -26,7 +26,7 @@ def decode_access_token(token: str):
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         return payload
-    except PyJWTError:
+    except (ExpiredSignatureError, InvalidTokenError):
         raise HTTPException(status_code=401, detail="Invalid token")
 
 def get_current_user(token: str = Depends(oauth2_scheme)):

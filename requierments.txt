@@ -7,3 +7,4 @@ python-multipart
 pyodbc
 python-jose[cryptography]
 jwt
+passlib[bcrypt]
