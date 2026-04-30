@@ -20,6 +20,3 @@ app.include_router(comment_routes.router)
 def root():
     return {"message": "Blog API is running"}
 
-
-
-####khaled
