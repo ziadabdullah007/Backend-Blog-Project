@@ -88,3 +88,6 @@ def delete_comment(comment_id: int, db: Session = Depends(get_db)):
     db.commit()
 
     return {"message": "Comment deleted"}
+
+
+###ahmed walid
