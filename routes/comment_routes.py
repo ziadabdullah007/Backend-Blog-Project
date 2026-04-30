@@ -90,20 +90,5 @@ def delete_comment(comment_id: int, db: Session = Depends(get_db)):
     return {"message": "Comment deleted"}
 
 
-###ahmed walid
-###ahmed walid
-###ahmed walid
-###ahmed walid
-###ahmed walid
-###ahmed walid
-###ahmed walid
-###ahmed walid
-###ahmed walid
-###ahmed walid
-###ahmed walid
-###ahmed walid
-###ahmed walid
-###ahmed walid
-
 
 
