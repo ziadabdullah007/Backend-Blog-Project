@@ -19,3 +19,7 @@ app.include_router(comment_routes.router)
 @app.get("/")
 def root():
     return {"message": "Blog API is running"}
+
+
+
+####khaled
