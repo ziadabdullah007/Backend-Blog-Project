@@ -4,7 +4,8 @@ sqlalchemy
 pymysql
 pydantic
 python-multipart
-pyodbc
 python-jose[cryptography]
-jwt
 passlib[bcrypt]
+redis
+prometheus-fastapi-instrumentator
+email-validator
