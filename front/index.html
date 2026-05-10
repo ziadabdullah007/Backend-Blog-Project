@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>InkFlow — Blog Platform</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0f0e0c;
+    --surface: #1a1917;
+    --border: #2e2d2a;
+    --accent: #e8c97a;
+    --accent2: #c0392b;
+    --text: #f0ede8;
+    --muted: #8a8880;
+    --radius: 6px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif; min-height: 100vh; }
+
+  /* NAV */
+  nav { display: flex; align-items: center; justify-content: space-between; padding: 20px 48px; border-bottom: 1px solid var(--border); position: sticky; top: 0; background: var(--bg); z-index: 100; }
+  .logo { font-family: 'Playfair Display', serif; font-size: 1.6rem; color: var(--accent); letter-spacing: -0.5px; }
+  .nav-right { display: flex; gap: 12px; align-items: center; }
+  #username-display { color: var(--muted); font-size: 0.85rem; }
+
+  /* BUTTONS */
+  .btn { padding: 9px 20px; border-radius: var(--radius); border: none; cursor: pointer; font-family: 'DM Sans', sans-serif; font-size: 0.875rem; font-weight: 500; transition: all 0.15s; }
+  .btn-primary { background: var(--accent); color: #0f0e0c; }
+  .btn-primary:hover { background: #f5d98a; }
+  .btn-ghost { background: transparent; color: var(--muted); border: 1px solid var(--border); }
+  .btn-ghost:hover { color: var(--text); border-color: var(--muted); }
+  .btn-danger { background: transparent; color: var(--accent2); border: 1px solid var(--accent2); }
+  .btn-danger:hover { background: var(--accent2); color: #fff; }
+  .btn-sm { padding: 5px 12px; font-size: 0.8rem; }
+
+  /* LAYOUT */
+  .container { max-width: 1100px; margin: 0 auto; padding: 0 48px; }
+  .page { display: none; }
+  .page.active { display: block; }
+
+  /* AUTH PAGE */
+  #auth-page { display: flex; align-items: center; justify-content: center; min-height: calc(100vh - 65px); }
+  .auth-box { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 48px; width: 420px; }
+  .auth-box h2 { font-family: 'Playfair Display', serif; font-size: 2rem; margin-bottom: 8px; }
+  .auth-box p { color: var(--muted); font-size: 0.875rem; margin-bottom: 32px; }
+  .auth-tabs { display: flex; gap: 0; margin-bottom: 28px; border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+  .auth-tab { flex: 1; padding: 10px; background: transparent; border: none; color: var(--muted); cursor: pointer; font-family: 'DM Sans', sans-serif; font-size: 0.875rem; transition: all 0.15s; }
+  .auth-tab.active { background: var(--accent); color: #0f0e0c; font-weight: 500; }
+
+  /* FORM */
+  .form-group { margin-bottom: 18px; }
+  label { display: block; font-size: 0.8rem; color: var(--muted); margin-bottom: 6px; letter-spacing: 0.5px; text-transform: uppercase; }
+  input, select, textarea { width: 100%; background: var(--bg); border: 1px solid var(--border); color: var(--text); padding: 11px 14px; border-radius: var(--radius); font-family: 'DM Sans', sans-serif; font-size: 0.9rem; outline: none; transition: border 0.15s; }
+  input:focus, select:focus, textarea:focus { border-color: var(--accent); }
+  textarea { resize: vertical; min-height: 120px; }
+  select option { background: var(--surface); }
+
+  /* FEED */
+  #feed-page { padding: 48px 0; }
+  .feed-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 36px; }
+  .feed-header h1 { font-family: 'Playfair Display', serif; font-size: 2.2rem; }
+  .posts-grid { display: grid; gap: 24px; }
+  .post-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 28px; cursor: pointer; transition: border-color 0.2s, transform 0.15s; }
+  .post-card:hover { border-color: var(--accent); transform: translateY(-2px); }
+  .post-card h3 { font-family: 'Playfair Display', serif; font-size: 1.3rem; margin-bottom: 10px; }
+  .post-card p { color: var(--muted); font-size: 0.875rem; line-height: 1.7; margin-bottom: 16px; }
+  .post-meta { display: flex; gap: 16px; align-items: center; }
+  .post-meta span { font-size: 0.78rem; color: var(--muted); }
+  .badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 0.75rem; background: rgba(232,201,122,0.12); color: var(--accent); border: 1px solid rgba(232,201,122,0.2); }
+  .post-actions { display: flex; gap: 8px; margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border); }
+
+  /* POST DETAIL */
+  #detail-page { padding: 48px 0; max-width: 780px; margin: 0 auto; }
+  .back-link { color: var(--muted); font-size: 0.875rem; cursor: pointer; margin-bottom: 32px; display: inline-flex; align-items: center; gap: 6px; }
+  .back-link:hover { color: var(--accent); }
+  .post-full h1 { font-family: 'Playfair Display', serif; font-size: 2.4rem; line-height: 1.25; margin-bottom: 20px; }
+  .post-full .content { color: #ccc8c0; line-height: 1.85; font-size: 1rem; margin: 28px 0; white-space: pre-wrap; }
+  .divider { border: none; border-top: 1px solid var(--border); margin: 36px 0; }
+  .comments-section h3 { font-family: 'Playfair Display', serif; font-size: 1.3rem; margin-bottom: 20px; }
+  .comment-box { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+  .comment-box p { font-size: 0.9rem; line-height: 1.6; margin-bottom: 8px; }
+  .comment-box .comment-meta { font-size: 0.78rem; color: var(--muted); display: flex; gap: 12px; align-items: center; }
+  .reply-btn { background: none; border: none; color: var(--accent); font-size: 0.78rem; cursor: pointer; font-family: 'DM Sans'; }
+  .replies { margin-left: 24px; border-left: 2px solid var(--border); padding-left: 16px; margin-top: 10px; }
+  .add-comment { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 20px; margin-top: 20px; }
+  .add-comment h4 { margin-bottom: 12px; font-size: 0.9rem; color: var(--muted); }
+
+  /* MODAL */
+  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); display: none; align-items: center; justify-content: center; z-index: 200; }
+  .modal-overlay.open { display: flex; }
+  .modal { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 36px; width: 500px; max-width: 95vw; }
+  .modal h3 { font-family: 'Playfair Display', serif; font-size: 1.5rem; margin-bottom: 24px; }
+  .modal-footer { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; }
+
+  /* ALERT */
+  .alert { padding: 12px 16px; border-radius: var(--radius); margin-bottom: 16px; font-size: 0.875rem; }
+  .alert-error { background: rgba(192,57,43,0.15); border: 1px solid rgba(192,57,43,0.3); color: #e74c3c; }
+  .alert-success { background: rgba(39,174,96,0.15); border: 1px solid rgba(39,174,96,0.3); color: #2ecc71; }
+
+  .empty-state { text-align: center; padding: 64px; color: var(--muted); }
+  .empty-state h3 { font-family: 'Playfair Display', serif; font-size: 1.5rem; margin-bottom: 8px; color: var(--text); }
+
+  .pagination { display: flex; gap: 8px; justify-content: center; margin-top: 36px; align-items: center; }
+  .page-info { color: var(--muted); font-size: 0.875rem; }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="logo">InkFlow</div>
+  <div class="nav-right">
+    <span id="username-display"></span>
+    <button class="btn btn-ghost btn-sm" id="nav-logout" style="display:none" onclick="logout()">Logout</button>
+    <button class="btn btn-primary btn-sm" id="nav-login" onclick="showAuth()">Sign In</button>
+  </div>
+</nav>
+
+<!-- AUTH PAGE -->
+<div id="auth-page" class="page active">
+  <div class="auth-box">
+    <h2>Welcome back</h2>
+    <p>Sign in to read and write on InkFlow</p>
+    <div class="auth-tabs">
+      <button class="auth-tab active" id="tab-login" onclick="switchTab('login')">Login</button>
+      <button class="auth-tab" id="tab-register" onclick="switchTab('register')">Register</button>
+    </div>
+    <div id="auth-alert"></div>
+    <!-- Login -->
+    <div id="login-form">
+      <div class="form-group"><label>Username</label><input id="login-username" type="text" placeholder="your_username"></div>
+      <div class="form-group"><label>Password</label><input id="login-password" type="password" placeholder="••••••••"></div>
+      <button class="btn btn-primary" style="width:100%" onclick="doLogin()">Sign In</button>
+    </div>
+    <!-- Register -->
+    <div id="register-form" style="display:none">
+      <div class="form-group"><label>Username</label><input id="reg-username" type="text" placeholder="your_username"></div>
+      <div class="form-group"><label>Email</label><input id="reg-email" type="email" placeholder="you@example.com"></div>
+      <div class="form-group"><label>Password</label><input id="reg-password" type="password" placeholder="••••••••"></div>
+      <div class="form-group">
+        <label>Role</label>
+        <select id="reg-role">
+          <option value="reader">Reader</option>
+          <option value="author">Author</option>
+        </select>
+      </div>
+      <button class="btn btn-primary" style="width:100%" onclick="doRegister()">Create Account</button>
+    </div>
+  </div>
+</div>
+
+<!-- FEED PAGE -->
+<div id="feed-page" class="page">
+  <div class="container">
+    <div class="feed-header">
+      <h1>Latest Posts</h1>
+      <button class="btn btn-primary" id="new-post-btn" style="display:none" onclick="openPostModal()">+ New Post</button>
+    </div>
+    <div id="posts-container"></div>
+    <div class="pagination" id="pagination"></div>
+  </div>
+</div>
+
+<!-- DETAIL PAGE -->
+<div id="detail-page" class="page">
+  <div class="container">
+    <span class="back-link" onclick="showFeed()">← Back to posts</span>
+    <div id="post-detail-content"></div>
+    <hr class="divider">
+    <div class="comments-section">
+      <h3>Discussion</h3>
+      <div id="comments-container"></div>
+      <div class="add-comment" id="add-comment-box" style="display:none">
+        <h4>Leave a comment</h4>
+        <div class="form-group"><textarea id="comment-text" placeholder="Share your thoughts..."></textarea></div>
+        <button class="btn btn-primary btn-sm" onclick="submitComment()">Post Comment</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- POST MODAL -->
+<div class="modal-overlay" id="post-modal">
+  <div class="modal">
+    <h3 id="modal-title">New Post</h3>
+    <div id="modal-alert"></div>
+    <div class="form-group"><label>Title</label><input id="post-title" type="text" placeholder="Your post title"></div>
+    <div class="form-group"><label>Content</label><textarea id="post-content" style="min-height:180px" placeholder="Write your story..."></textarea></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closePostModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="submitPost()">Publish</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const API = '';  // same origin, or set to 'http://localhost:8000'
+let token = localStorage.getItem('token');
+let currentUser = JSON.parse(localStorage.getItem('user') || 'null');
+let currentPage = 1;
+let currentPostId = null;
+let editingPostId = null;
+let replyToId = null;
+
+// ─── INIT ───
+window.onload = () => {
+  if (token && currentUser) {
+    showFeed();
+  }
+};
+
+function setToken(t, user) {
+  token = t; currentUser = user;
+  localStorage.setItem('token', t);
+  localStorage.setItem('user', JSON.stringify(user));
+}
+
+function logout() {
+  token = null; currentUser = null;
+  localStorage.removeItem('token');
+  localStorage.removeItem('user');
+  showPage('auth-page');
+  document.getElementById('nav-logout').style.display = 'none';
+  document.getElementById('nav-login').style.display = '';
+  document.getElementById('username-display').textContent = '';
+}
+
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function showAuth() { showPage('auth-page'); }
+
+async function showFeed() {
+  showPage('feed-page');
+  updateNav();
+  await loadPosts();
+}
+
+function updateNav() {
+  if (currentUser) {
+    document.getElementById('nav-logout').style.display = '';
+    document.getElementById('nav-login').style.display = 'none';
+    document.getElementById('username-display').textContent = `${currentUser.username} · ${currentUser.role}`;
+    const canPost = currentUser.role === 'admin' || currentUser.role === 'author';
+    document.getElementById('new-post-btn').style.display = canPost ? '' : 'none';
+  }
+}
+
+function switchTab(tab) {
+  document.getElementById('login-form').style.display = tab === 'login' ? '' : 'none';
+  document.getElementById('register-form').style.display = tab === 'register' ? '' : 'none';
+  document.getElementById('tab-login').classList.toggle('active', tab === 'login');
+  document.getElementById('tab-register').classList.toggle('active', tab === 'register');
+  document.getElementById('auth-alert').innerHTML = '';
+}
+
+// ─── AUTH ───
+async function doLogin() {
+  const username = document.getElementById('login-username').value;
+  const password = document.getElementById('login-password').value;
+  const form = new URLSearchParams({ username, password });
+  const res = await fetch(`${API}/users/login`, { method: 'POST', body: form });
+  const data = await res.json();
+  if (!res.ok) return showAlert('auth-alert', data.detail || 'Login failed', 'error');
+  // fetch me
+  const me = await fetch(`${API}/users/me`, { headers: { Authorization: `Bearer ${data.access_token}` } });
+  const user = await me.json();
+  setToken(data.access_token, user);
+  showFeed();
+}
+
+async function doRegister() {
+  const body = {
+    username: document.getElementById('reg-username').value,
+    email: document.getElementById('reg-email').value,
+    password: document.getElementById('reg-password').value,
+    role: document.getElementById('reg-role').value
+  };
+  const res = await fetch(`${API}/users/`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(body) });
+  const data = await res.json();
+  if (!res.ok) return showAlert('auth-alert', data.detail || 'Registration failed', 'error');
+  showAlert('auth-alert', 'Account created! Please log in.', 'success');
+  switchTab('login');
+}
+
+// ─── POSTS ───
+async function loadPosts() {
+  const res = await fetch(`${API}/posts/?page=${currentPage}&limit=6`);
+  const data = await res.json();
+  const container = document.getElementById('posts-container');
+
+  if (!data.data || data.data.length === 0) {
+    container.innerHTML = `<div class="empty-state"><h3>No posts yet</h3><p>Be the first to write something.</p></div>`;
+    document.getElementById('pagination').innerHTML = '';
+    return;
+  }
+
+  container.innerHTML = data.data.map(post => `
+    <div class="post-card" onclick="viewPost(${post.id})">
+      <h3>${escHtml(post.title)}</h3>
+      <p>${escHtml(post.content.substring(0, 180))}${post.content.length > 180 ? '…' : ''}</p>
+      <div class="post-meta">
+        <span class="badge">Post #${post.id}</span>
+        <span>Author ID: ${post.user_id}</span>
+      </div>
+      ${canEditPost(post) ? `
+      <div class="post-actions" onclick="event.stopPropagation()">
+        <button class="btn btn-ghost btn-sm" onclick="openEditPost(${post.id},'${escHtml(post.title)}','${escHtml(post.content.replace(/'/g, "\\'"))}')">Edit</button>
+        <button class="btn btn-danger btn-sm" onclick="deletePost(${post.id})">Delete</button>
+      </div>` : ''}
+    </div>
+  `).join('');
+
+  // Pagination
+  const totalPages = Math.ceil(data.total / 6);
+  document.getElementById('pagination').innerHTML = `
+    <button class="btn btn-ghost btn-sm" onclick="changePage(${currentPage-1})" ${currentPage===1?'disabled':''}>← Prev</button>
+    <span class="page-info">Page ${currentPage} of ${totalPages}</span>
+    <button class="btn btn-ghost btn-sm" onclick="changePage(${currentPage+1})" ${currentPage>=totalPages?'disabled':''}>Next →</button>
+  `;
+}
+
+function canEditPost(post) {
+  if (!currentUser) return false;
+  return currentUser.role === 'admin' || post.user_id === currentUser.id;
+}
+
+function changePage(n) { currentPage = n; loadPosts(); }
+
+async function viewPost(postId) {
+  currentPostId = postId;
+  replyToId = null;
+  showPage('detail-page');
+  const res = await fetch(`${API}/posts/${postId}`);
+  const post = await res.json();
+
+  document.getElementById('post-detail-content').innerHTML = `
+    <div class="post-full">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
+        <h1>${escHtml(post.title)}</h1>
+        ${canEditPost(post) ? `
+        <div style="display:flex;gap:8px;flex-shrink:0;margin-left:20px">
+          <button class="btn btn-ghost btn-sm" onclick="openEditPost(${post.id},'${escHtml(post.title)}','${escHtml(post.content.replace(/'/g,"\\'"))}')">Edit</button>
+          <button class="btn btn-danger btn-sm" onclick="deletePost(${post.id});showFeed()">Delete</button>
+        </div>` : ''}
+      </div>
+      <span class="badge">Author ID: ${post.user_id}</span>
+      <div class="content">${escHtml(post.content)}</div>
+    </div>
+  `;
+
+  document.getElementById('add-comment-box').style.display = currentUser ? '' : 'none';
+  await loadComments(postId);
+}
+
+// ─── COMMENTS ───
+async function loadComments(postId) {
+  const res = await fetch(`${API}/comments/post/${postId}/nested`);
+  const comments = await res.json();
+  const container = document.getElementById('comments-container');
+  if (comments.length === 0) {
+    container.innerHTML = '<p style="color:var(--muted);font-size:.875rem">No comments yet. Start the discussion!</p>';
+    return;
+  }
+  container.innerHTML = comments.map(c => renderComment(c)).join('');
+}
+
+function renderComment(c, depth=0) {
+  const canDel = currentUser && (currentUser.role === 'admin' || currentUser.id === c.user_id);
+  return `
+    <div class="comment-box" style="${depth>0?'background:var(--bg)':''}">
+      <p>${escHtml(c.content)}</p>
+      <div class="comment-meta">
+        <span>User #${c.user_id}</span>
+        ${currentUser ? `<button class="reply-btn" onclick="setReply(${c.id})">↩ Reply</button>` : ''}
+        ${canDel ? `<button class="reply-btn" style="color:var(--accent2)" onclick="deleteComment(${c.id})">Delete</button>` : ''}
+      </div>
+      ${c.replies && c.replies.length > 0 ? `<div class="replies">${c.replies.map(r=>renderComment(r,depth+1)).join('')}</div>` : ''}
+    </div>`;
+}
+
+function setReply(id) {
+  replyToId = id;
+  document.getElementById('comment-text').placeholder = `Replying to comment #${id}...`;
+  document.getElementById('comment-text').focus();
+}
+
+async function submitComment() {
+  if (!token) return;
+  const content = document.getElementById('comment-text').value.trim();
+  if (!content) return;
+  const body = { content, post_id: currentPostId };
+  if (replyToId) body.parent_id = replyToId;
+  const res = await fetch(`${API}/comments/`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    body: JSON.stringify(body)
+  });
+  if (res.ok) {
+    document.getElementById('comment-text').value = '';
+    replyToId = null;
+    document.getElementById('comment-text').placeholder = 'Share your thoughts...';
+    await loadComments(currentPostId);
+  }
+}
+
+async function deleteComment(id) {
+  if (!confirm('Delete this comment?')) return;
+  await fetch(`${API}/comments/${id}`, { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } });
+  await loadComments(currentPostId);
+}
+
+// ─── POST MODAL ───
+function openPostModal() {
+  editingPostId = null;
+  document.getElementById('modal-title').textContent = 'New Post';
+  document.getElementById('post-title').value = '';
+  document.getElementById('post-content').value = '';
+  document.getElementById('modal-alert').innerHTML = '';
+  document.getElementById('post-modal').classList.add('open');
+}
+
+function openEditPost(id, title, content) {
+  editingPostId = id;
+  document.getElementById('modal-title').textContent = 'Edit Post';
+  document.getElementById('post-title').value = title;
+  document.getElementById('post-content').value = content;
+  document.getElementById('modal-alert').innerHTML = '';
+  document.getElementById('post-modal').classList.add('open');
+}
+
+function closePostModal() { document.getElementById('post-modal').classList.remove('open'); }
+
+async function submitPost() {
+  const title = document.getElementById('post-title').value.trim();
+  const content = document.getElementById('post-content').value.trim();
+  if (!title || !content) return showAlert('modal-alert', 'Title and content are required', 'error');
+
+  const url = editingPostId ? `${API}/posts/${editingPostId}` : `${API}/posts/`;
+  const method = editingPostId ? 'PUT' : 'POST';
+  const res = await fetch(url, {
+    method,
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ title, content })
+  });
+  const data = await res.json();
+  if (!res.ok) return showAlert('modal-alert', data.detail || 'Error', 'error');
+  closePostModal();
+  if (editingPostId && currentPostId === editingPostId) viewPost(editingPostId);
+  else { currentPage = 1; await loadPosts(); }
+}
+
+async function deletePost(id) {
+  if (!confirm('Delete this post and all its comments?')) return;
+  await fetch(`${API}/posts/${id}`, { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } });
+  currentPage = 1; await loadPosts();
+}
+
+// ─── HELPERS ───
+function showAlert(containerId, message, type) {
+  document.getElementById(containerId).innerHTML = `<div class="alert alert-${type}">${message}</div>`;
+}
+
+function escHtml(str) {
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// Close modal on overlay click
+document.getElementById('post-modal').addEventListener('click', e => {
+  if (e.target === document.getElementById('post-modal')) closePostModal();
+});
+</script>
+</body>
+</html>
