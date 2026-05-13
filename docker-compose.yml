@@ -37,6 +37,23 @@ services:
       - api
     restart: unless-stopped
 
+  loki:
+    image: grafana/loki:2.9.0
+    container_name: blog_loki
+    ports:
+      - "3100:3100"
+    restart: unless-stopped
+
+  promtail:
+    image: grafana/promtail:2.9.0
+    container_name: blog_promtail
+    volumes:
+      - ./logs:/app/logs
+      - ./monitoring/promtail.yml:/etc/promtail/config.yml
+    depends_on:
+      - loki
+    restart: unless-stopped
+
   grafana:
     image: grafana/grafana:latest
     container_name: blog_grafana
@@ -49,6 +66,7 @@ services:
       - ./monitoring/grafana/provisioning:/etc/grafana/provisioning
     depends_on:
       - prometheus
+      - loki
     restart: unless-stopped
 
 volumes:
