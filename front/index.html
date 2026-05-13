@@ -41,7 +41,8 @@
   .page.active { display: block; }
 
   /* AUTH PAGE */
-  #auth-page { display: flex; align-items: center; justify-content: center; min-height: calc(100vh - 65px); }
+  #auth-page { min-height: calc(100vh - 65px); }
+  #auth-page.page.active { display: flex; align-items: center; justify-content: center; }
   .auth-box { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 48px; width: 420px; }
   .auth-box h2 { font-family: 'Playfair Display', serif; font-size: 2rem; margin-bottom: 8px; }
   .auth-box p { color: var(--muted); font-size: 0.875rem; margin-bottom: 32px; }
@@ -195,7 +196,7 @@
 </div>
 
 <script>
-const API = '';  // same origin, or set to 'http://localhost:8000'
+const API = getApiBaseUrl();
 let token = localStorage.getItem('token');
 let currentUser = JSON.parse(localStorage.getItem('user') || 'null');
 let currentPage = 1;
@@ -205,15 +206,22 @@ let replyToId = null;
 
 // ─── INIT ───
 window.onload = () => {
+  if (currentUser) {
+    currentUser = normalizeUser(currentUser);
+    localStorage.setItem('user', JSON.stringify(currentUser));
+  }
+
   if (token && currentUser) {
     showFeed();
   }
 };
 
 function setToken(t, user) {
-  token = t; currentUser = user;
+  const normalizedUser = normalizeUser(user);
+  token = t;
+  currentUser = normalizedUser;
   localStorage.setItem('token', t);
-  localStorage.setItem('user', JSON.stringify(user));
+  localStorage.setItem('user', JSON.stringify(normalizedUser));
 }
 
 function logout() {
@@ -241,12 +249,19 @@ async function showFeed() {
 
 function updateNav() {
   if (currentUser) {
+    const role = getRole(currentUser);
     document.getElementById('nav-logout').style.display = '';
     document.getElementById('nav-login').style.display = 'none';
-    document.getElementById('username-display').textContent = `${currentUser.username} · ${currentUser.role}`;
-    const canPost = currentUser.role === 'admin' || currentUser.role === 'author';
+    document.getElementById('username-display').textContent = `${currentUser.username} · ${role}`;
+    const canPost = role === 'admin' || role === 'author';
     document.getElementById('new-post-btn').style.display = canPost ? '' : 'none';
+    return;
   }
+
+  document.getElementById('nav-logout').style.display = 'none';
+  document.getElementById('nav-login').style.display = '';
+  document.getElementById('username-display').textContent = '';
+  document.getElementById('new-post-btn').style.display = 'none';
 }
 
 function switchTab(tab) {
@@ -259,17 +274,43 @@ function switchTab(tab) {
 
 // ─── AUTH ───
 async function doLogin() {
-  const username = document.getElementById('login-username').value;
+  const username = document.getElementById('login-username').value.trim();
   const password = document.getElementById('login-password').value;
-  const form = new URLSearchParams({ username, password });
-  const res = await fetch(`${API}/users/login`, { method: 'POST', body: form });
-  const data = await res.json();
-  if (!res.ok) return showAlert('auth-alert', data.detail || 'Login failed', 'error');
-  // fetch me
-  const me = await fetch(`${API}/users/me`, { headers: { Authorization: `Bearer ${data.access_token}` } });
-  const user = await me.json();
-  setToken(data.access_token, user);
-  showFeed();
+  if (!username || !password) {
+    return showAlert('auth-alert', 'Username and password are required', 'error');
+  }
+
+  const form = new URLSearchParams();
+  form.set('username', username);
+  form.set('password', password);
+
+  try {
+    const res = await fetch(`${API}/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: form
+    });
+    const data = await readResponse(res);
+    if (!res.ok) return showAlert('auth-alert', data.detail || 'Login failed', 'error');
+    if (!data.access_token) return showAlert('auth-alert', 'Login succeeded without a token', 'error');
+
+    const payload = decodeJwtPayload(data.access_token);
+    const user = {
+      id: payload.user_id,
+      username: payload.sub || username,
+      role: payload.role
+    };
+
+    setToken(data.access_token, user);
+    document.getElementById('auth-alert').innerHTML = '';
+    document.getElementById('login-password').value = '';
+    showFeed();
+  } catch (error) {
+    const message = error.message === 'Failed to fetch'
+      ? `Could not reach the API at ${API}.`
+      : error.message;
+    showAlert('auth-alert', message || 'Login failed', 'error');
+  }
 }
 
 async function doRegister() {
@@ -279,7 +320,7 @@ async function doRegister() {
     password: document.getElementById('reg-password').value,
     role: document.getElementById('reg-role').value
   };
-  const res = await fetch(`${API}/users/`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(body) });
+  const res = await fetch(`${API}/auth/register`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(body) });
   const data = await res.json();
   if (!res.ok) return showAlert('auth-alert', data.detail || 'Registration failed', 'error');
   showAlert('auth-alert', 'Account created! Please log in.', 'success');
@@ -314,7 +355,6 @@ async function loadPosts() {
     </div>
   `).join('');
 
-  // Pagination
   const totalPages = Math.ceil(data.total / 6);
   document.getElementById('pagination').innerHTML = `
     <button class="btn btn-ghost btn-sm" onclick="changePage(${currentPage-1})" ${currentPage===1?'disabled':''}>← Prev</button>
@@ -325,7 +365,7 @@ async function loadPosts() {
 
 function canEditPost(post) {
   if (!currentUser) return false;
-  return currentUser.role === 'admin' || post.user_id === currentUser.id;
+  return getRole(currentUser) === 'admin' || post.user_id === currentUser.id;
 }
 
 function changePage(n) { currentPage = n; loadPosts(); }
@@ -439,8 +479,10 @@ async function submitPost() {
   const content = document.getElementById('post-content').value.trim();
   if (!title || !content) return showAlert('modal-alert', 'Title and content are required', 'error');
 
+  // FIX 3: PUT للـ edit, POST للـ create
   const url = editingPostId ? `${API}/posts/${editingPostId}` : `${API}/posts/`;
   const method = editingPostId ? 'PUT' : 'POST';
+
   const res = await fetch(url, {
     method,
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
@@ -464,11 +506,44 @@ function showAlert(containerId, message, type) {
   document.getElementById(containerId).innerHTML = `<div class="alert alert-${type}">${message}</div>`;
 }
 
+function getApiBaseUrl() {
+  return window.location.protocol === 'file:'
+    ? 'http://127.0.0.1:8000'
+    : window.location.origin;
+}
+
+function getRole(user) {
+  return String(user?.role || 'reader').toLowerCase();
+}
+
+function normalizeUser(user) {
+  return user ? { ...user, role: getRole(user) } : user;
+}
+
+async function readResponse(res) {
+  const text = await res.text();
+  if (!text) return {};
+
+  try {
+    return JSON.parse(text);
+  } catch {
+    return { detail: text };
+  }
+}
+
+function decodeJwtPayload(token) {
+  const payload = token.split('.')[1];
+  if (!payload) throw new Error('Invalid token format');
+
+  const normalized = payload.replace(/-/g, '+').replace(/_/g, '/');
+  const padded = normalized.padEnd(Math.ceil(normalized.length / 4) * 4, '=');
+  return JSON.parse(atob(padded));
+}
+
 function escHtml(str) {
   return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
-// Close modal on overlay click
 document.getElementById('post-modal').addEventListener('click', e => {
   if (e.target === document.getElementById('post-modal')) closePostModal();
 });

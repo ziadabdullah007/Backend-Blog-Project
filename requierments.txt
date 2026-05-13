@@ -1,10 +1,10 @@
 fastapi
 uvicorn
 sqlalchemy
-pymysql
-pydantic
-python-multipart
 pyodbc
+pydantic[email]
+python-multipart
 python-jose[cryptography]
-jwt
-passlib[bcrypt]
+bcrypt==4.0.1
+redis
+prometheus-fastapi-instrumentator
