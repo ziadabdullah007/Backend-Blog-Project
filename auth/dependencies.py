@@ -29,8 +29,11 @@ def get_current_user(
 
 
 def require_roles(*allowed_roles):
+    normalized_roles = {role.lower() for role in allowed_roles}
+
     def checker(current_user: User = Depends(get_current_user)):
-        if current_user.role not in allowed_roles:
+        current_role = (current_user.role or "").lower()
+        if current_role not in normalized_roles:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="You do not have permission to perform this action"

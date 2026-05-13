@@ -8,3 +8,4 @@ python-jose[cryptography]
 bcrypt==4.0.1
 redis
 prometheus-fastapi-instrumentator
+pytest
